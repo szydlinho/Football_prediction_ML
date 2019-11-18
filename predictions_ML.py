@@ -17,7 +17,11 @@ cursor = db.cursor()
 
 cursor.execute("USE S72t1V5idn") # select the database
 
-
+loc_to_functions = dics + ":/data_football/Football_prediction_ML/functions/"
+    
+os.chdir(loc_to_functions)
+    
+import functions_for_dataset_preparation as f1
 
 
 
@@ -32,7 +36,7 @@ dics = a['C' in a]
 dics = a[2]
 
 dics
-league_abb = 'N1'
+league_abb = 'D1'
 
 
 pd.options.display.max_columns = None
@@ -299,19 +303,25 @@ predict = predict.reset_index().drop('Date', axis = 1)
 
 
 y_pred_new = logreg.predict(predict[veriables])
-
+y_pred_new_proba =  pd.DataFrame(logreg.predict_proba(predict[veriables]))
 
 #y_pred_new
 
+f1.DataBaseMLUpdateOrInsert(predict, predict_mw, predict_date, y_pred_new, y_pred_new_proba, 'LR', league_abb)
 
-final_logreg = pd.concat([predict[["HomeTeam", "AwayTeam"]].reset_index(drop=True), pd.DataFrame(y_pred_new)], axis=1)
-final_logreg
-final_logreg_to_db = pd.concat([pd.DataFrame(predict_date),predict[["HomeTeam", "AwayTeam"]].reset_index(drop=True), pd.DataFrame(y_pred_new)], axis=1)
+
+final_logreg = pd.concat([predict[["HomeTeam", "AwayTeam"]].reset_index(drop=True), 
+                          pd.DataFrame(y_pred_new),
+                          y_pred_new_proba.iloc[:,1]], axis=1)
+final_logreg_to_db = pd.concat([pd.DataFrame(predict_date),
+                                predict[["HomeTeam", "AwayTeam"]].reset_index(drop=True), 
+                                pd.DataFrame(y_pred_new),
+                                y_pred_new_proba.iloc[:,1]], axis=1)
 final_logreg_to_db["MW"] = predict_mw
 final_logreg_to_db["Result"] = ""
 final_logreg_to_db["model"] = "LR"
 final_logreg_to_db["league"] = league_abb
-final_logreg_to_db.columns = ["Date", "HomeTeam", "AwayTeam", "prediction", "MW", "Result", "model" , "league"]
+final_logreg_to_db.columns = ["Date", "HomeTeam", "AwayTeam", "prediction","proba", "MW", "Result", "model" , "league"]
 
 #mySql_insert_query = """INSERT INTO predictons (date, league, HomeTeam, AwayTeam, model, prediction, Result) 
 #                                VALUES (%s, %s, %s, %s) """
@@ -327,8 +337,15 @@ for i in range(0, len(final_logreg_to_db)):
               final_logreg_to_db["HomeTeam"][i],
               final_logreg_to_db["AwayTeam"][i])
     
+    tuple_temp_proba = (str(final_logreg_to_db["proba"][i]),
+              str(predict_mw),
+              league_abb,
+              final_logreg_to_db["HomeTeam"][i],
+              final_logreg_to_db["AwayTeam"][i])
+    
     if len(old_df[(old_df["HomeTeam"] == final_logreg_to_db["HomeTeam"][i]) & (old_df["AwayTeam"] == final_logreg_to_db["AwayTeam"][i]) ]) >0:
         cursor.execute("UPDATE predictions SET prediction = %s WHERE  MW=%s and model= 'LR' and league = %s  AND HomeTeam = %s and AwayTeam = %s", tuple_temp)
+        cursor.execute("UPDATE predictions SET proba = %s WHERE  MW=%s and model= 'LR' and league = %s  AND HomeTeam = %s and AwayTeam = %s", tuple_temp_proba)
         db.commit()
     else:
         recordTuple = (final_logreg_to_db["Date"][i],
@@ -338,8 +355,9 @@ for i in range(0, len(final_logreg_to_db)):
                final_logreg_to_db["AwayTeam"][i],
                final_logreg_to_db["model"][i],
                str(final_logreg_to_db["prediction"][i]),
+               str(final_logreg_to_db["proba"][i]),
                final_logreg_to_db["Result"][i]) 
-        cursor.execute("INSERT INTO predictions (date, league,MW,  HomeTeam, AwayTeam, model, prediction, Result) VALUES (%s, %s,%s,  %s, %s, %s, %s, %s) ", recordTuple)
+        cursor.execute("INSERT INTO predictions (date, league,MW,  HomeTeam, AwayTeam, model, prediction, proba, Result) VALUES (%s, %s,%s,  %s, %s, %s, %s %s, %s) ", recordTuple)
         db.commit() 
     
 
