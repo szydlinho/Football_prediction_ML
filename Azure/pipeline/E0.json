@@ -1,6 +1,28 @@
 {
 	"name": "E0",
 	"properties": {
+		"activities": [
+			{
+				"name": "E0",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": "https://datasetupdate2.azurewebsites.net/api/DatasetUpdate?code=v4ZTMcVaSLG/Z9BWv8csUk5XCoBiGWjEOQDEhnB0qPZ9i3u0BhQfaA==",
+					"method": "POST",
+					"body": {
+						"name": "E0"
+					}
+				}
+			}
+		],
 		"annotations": []
 	}
 }
