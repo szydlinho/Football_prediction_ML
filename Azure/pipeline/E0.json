@@ -17,7 +17,10 @@
 				"typeProperties": {
 					"url": "https://datasetupdate2.azurewebsites.net/api/DatasetUpdate?code=v4ZTMcVaSLG/Z9BWv8csUk5XCoBiGWjEOQDEhnB0qPZ9i3u0BhQfaA==",
 					"method": "POST",
-					"body": "\"{\\\"name\\\" : \\\"E0\\\"}\""
+					"body": {
+						"value": "@concat('\"name\":\"E0\"')",
+						"type": "Expression"
+					}
 				}
 			}
 		],
